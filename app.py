@@ -341,7 +341,7 @@ def main():
             **automatización comercial, auditoría visual y marketing digital.**
             """)
 
-        # Cargar ejemplos con la función segura
+
         with col2:
             st.info("Ejemplo de cada chocolate")
             try:
@@ -377,7 +377,7 @@ def main():
         )
 
         if uploaded_file is not None:
-            imagen = load_local_image(uploaded_file)
+            imagen = Image.open(uploaded_file)
             st.image(imagen, caption='Imagen cargada', width=200)
             st.success("✅ Imagen cargada correctamente")
 
