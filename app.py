@@ -350,10 +350,10 @@ def main():
                 sublime_img = load_local_image("sublime_1.jpg")
                 triangulo_img = load_local_image("triangulo_1.jpg")
 
-                st.image(hershey_img, caption="Ejemplo: Hershey's", use_container_width=True)
-                st.image(princesa_img, caption="Ejemplo: Princesa", use_container_width=True)
-                st.image(sublime_img, caption="Ejemplo: Sublime", use_container_width=True)
-                st.image(triangulo_img, caption="Ejemplo: Triángulo", use_container_width=True)
+                st.image(hershey_img, caption="Ejemplo: Hershey's")
+                st.image(princesa_img, caption="Ejemplo: Princesa")
+                st.image(sublime_img, caption="Ejemplo: Sublime")
+                st.image(triangulo_img, caption="Ejemplo: Triángulo")
             except FileNotFoundError as fnf:
                 st.error(f"❌ FileNotFoundError: {fnf}")
             except UnidentifiedImageError as uie:
@@ -377,8 +377,8 @@ def main():
         )
 
         if uploaded_file is not None:
-            imagen = Image.open(uploaded_file)
-            st.image(imagen, caption='Imagen cargada', use_container_width=True, width=200)
+            imagen = load_local_image(uploaded_file)
+            st.image(imagen, caption='Imagen cargada', width=200)
             st.success("✅ Imagen cargada correctamente")
 
         st.markdown('</div>', unsafe_allow_html=True)
