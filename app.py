@@ -10,11 +10,13 @@ Original file is located at
 import streamlit as st
 import tensorflow as tf
 from tensorflow.keras.models import load_model
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime
+import os
+from pathlib import Path
 
 # ==================== CONFIGURACIÓN DE LA PÁGINA ====================
 st.set_page_config(
@@ -27,12 +29,10 @@ st.set_page_config(
 # ==================== ESTILOS CSS PERSONALIZADOS ====================
 st.markdown("""
     <style>
-    /* Fondo y tema general */
+    /* (tu CSS sigue igual) */
     .main {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
-
-    /* Tarjetas con efecto glassmorphism */
     .card {
         background: rgba(255, 255, 255, 0.95);
         border-radius: 15px;
@@ -42,8 +42,6 @@ st.markdown("""
         border: 1px solid rgba(255, 255, 255, 0.18);
         margin: 15px 0;
     }
-
-    /* Título principal */
     .main-title {
         font-size: 3.5em;
         font-weight: 800;
@@ -54,8 +52,6 @@ st.markdown("""
         margin-bottom: 10px;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
     }
-
-    /* Subtítulo */
     .subtitle {
         text-align: center;
         font-size: 1.3em;
@@ -63,8 +59,6 @@ st.markdown("""
         margin-bottom: 30px;
         font-weight: 300;
     }
-
-    /* Métricas personalizadas */
     .metric-card {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 20px;
@@ -73,18 +67,14 @@ st.markdown("""
         text-align: center;
         margin: 10px 0;
     }
-
     .metric-value {
         font-size: 2.5em;
         font-weight: bold;
     }
-
     .metric-label {
         font-size: 1em;
         opacity: 0.9;
     }
-
-    /* Botones */
     .stButton>button {
         width: 100%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -96,20 +86,15 @@ st.markdown("""
         border-radius: 10px;
         transition: all 0.3s;
     }
-
     .stButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
     }
-
-    /* Separador decorativo */
     .separator {
         height: 3px;
         background: linear-gradient(90deg, transparent, #667eea, transparent);
         margin: 30px 0;
     }
-
-    /* Alerta de predicción */
     .prediction-box {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         padding: 30px;
@@ -121,13 +106,9 @@ st.markdown("""
         margin: 20px 0;
         box-shadow: 0 10px 30px rgba(245, 87, 108, 0.3);
     }
-
-    /* Sidebar */
     .css-1d391kg {
         background: rgba(255, 255, 255, 0.05);
     }
-
-    /* Info boxes */
     .info-box {
         background: rgba(102, 126, 234, 0.1);
         border-left: 4px solid #667eea;
@@ -246,6 +227,35 @@ def crear_grafico_gauge(confianza):
 
     return fig
 
+# =========== Nueva función segura para cargar imágenes locales ===========
+def load_local_image(fname):
+    """
+    Intenta cargar fname probando varias rutas razonables:
+      - misma carpeta que app.py
+      - subcarpeta images/
+      - subcarpeta app/
+      - cwd actual
+    Lanza FileNotFoundError o UnidentifiedImageError con mensajes claros.
+    """
+    base = Path(__file__).resolve().parent
+    candidates = [
+        base / fname,
+        base / "images" / fname,
+        base / "app" / fname,
+        Path.cwd() / fname
+    ]
+    for p in candidates:
+        if p.exists() and p.is_file():
+            try:
+                img = Image.open(p)
+                img.load()  # fuerza carga y detecta corrupciones
+                return img
+            except UnidentifiedImageError:
+                raise UnidentifiedImageError(f"Archivo encontrado pero PIL no lo reconoce: {p}")
+            except Exception as e:
+                raise Exception(f"Error abriendo imagen {p}: {e}")
+    raise FileNotFoundError(f"No se encontró el archivo en rutas: {', '.join(str(x) for x in candidates)}")
+
 # ==================== INTERFAZ PRINCIPAL ====================
 
 def main():
@@ -288,11 +298,15 @@ def main():
 
         st.markdown("---")
 
-        unalm_img = Image.open("unalm.jpg")
+        # Logo: carga segura
         st.markdown("### UNIVERSIDAD NACIONAL AGRARIA LA MOLINA")
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-             st.image(unalm_img, width=100)
+            try:
+                unalm_img = load_local_image("unalm.jpg")
+                st.image(unalm_img, width=100)
+            except Exception as e:
+                st.warning(f"No se pudo cargar logo 'unalm.jpg': {e}")
 
         st.markdown("---")
         st.markdown(f"**📅 Fecha:** {datetime.now().strftime('%d/%m/%Y')}")
@@ -321,34 +335,31 @@ def main():
             - 🔧 **Fine-tuning:** Se ajustaron las capas finales del modelo para adaptarlo específicamente a las cuatro clases definidas en este estudio: *Triángulo, Princesa, Hershey y Sublime*.
             - 💻 **Implementación:** Todo el sistema fue desarrollado en **Python**, utilizando **TensorFlow** y desplegado mediante **Streamlit** para ofrecer una interfaz sencilla y visualmente amigable.
 
-
             #### Resultados
             El modelo alcanzó una **precisión del 92.31%** en el conjunto de validación, demostrando una alta capacidad de **generalización ante imágenes no vistas**. Los resultados confirman
             la viabilidad de aplicar **redes neuronales convolucionales (CNN)** a problemas reales de reconocimiento de productos, abriendo paso a soluciones más amplias en
             **automatización comercial, auditoría visual y marketing digital.**
-
-            #### Conclusión
-
-            El clasificador de chocolates representa un ejemplo práctico de cómo la **inteligencia artificial aplicada** puede transformar tareas cotidianas en procesos
-             **rápidos, confiables y escalables**. Este caso de estudio sienta las bases para futuras implementaciones en **otros sectores de consumo**, como bebidas,
-             snacks o productos de limpieza, ampliando el alcance del reconocimiento visual automatizado en el mercado peruano.
             """)
-        hershey_img = Image.open("hershey_1.jpg")
-        princesa_img = Image.open("princesa_1.jpg")
-        sublime_img = Image.open("sublime_1.jpg")
-        triangulo_img = Image.open("triangulo_1.jpg")
 
+        # Cargar ejemplos con la función segura
         with col2:
-          st.info("Ejemplo de cada chocolate")
+            st.info("Ejemplo de cada chocolate")
+            try:
+                hershey_img = load_local_image("hershey_1.jpg")
+                princesa_img = load_local_image("princesa_1.jpg")
+                sublime_img = load_local_image("sublime_1.jpg")
+                triangulo_img = load_local_image("triangulo_1.jpg")
 
-          try:
-              st.image(hershey_img, caption="Ejemplo: Hershey's", use_container_width=True)
-              st.image(princesa_img, caption="Ejemplo: Princesa", use_container_width=True)
-              st.image(sublime_img, caption="Ejemplo: Sublime", use_container_width=True)
-              st.image(triangulo_img, caption="Ejemplo: Triángulo", use_container_width=True)
-          except FileNotFoundError as e:
-              st.error("❌ No se encontraron las imágenes. Asegúrate de que estén en la misma carpeta que el archivo app.py")
-
+                st.image(hershey_img, caption="Ejemplo: Hershey's", use_container_width=True)
+                st.image(princesa_img, caption="Ejemplo: Princesa", use_container_width=True)
+                st.image(sublime_img, caption="Ejemplo: Sublime", use_container_width=True)
+                st.image(triangulo_img, caption="Ejemplo: Triángulo", use_container_width=True)
+            except FileNotFoundError as fnf:
+                st.error(f"❌ FileNotFoundError: {fnf}")
+            except UnidentifiedImageError as uie:
+                st.error(f"❌ UnidentifiedImageError: {uie}")
+            except Exception as e:
+                st.error(f"❌ Error al cargar/mostrar imágenes: {e}")
 
     # ==================== ZONA DE CARGA Y PREDICCIÓN ====================
     st.markdown("## 📤 Cargar Imagen para Clasificación")
@@ -368,10 +379,7 @@ def main():
         if uploaded_file is not None:
             imagen = Image.open(uploaded_file)
             st.image(imagen, caption='Imagen cargada', use_container_width=True, width=200)
-
-
             st.success("✅ Imagen cargada correctamente")
-
 
         st.markdown('</div>', unsafe_allow_html=True)
 
