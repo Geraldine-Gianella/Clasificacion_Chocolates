@@ -132,17 +132,15 @@ def cargar_modelo():
         return None
 
 def preprocesar_imagen(imagen):
-    """Preprocesa la imagen para el modelo"""
-    img = imagen.resize((224, 224))
-    img_array = np.array(img) / 255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    img = imagen.resize((224, 224))  # tamaño de entrada de tu modelo
+    img_array = np.array(img) / 255.0  # normalización
+    img_array = np.expand_dims(img_array, axis=0)  # (1, 224, 224, 3)
     return img_array
 
-def predecir(modelo, imagen):
-    """Realiza la predicción"""
+
+def predecir(modelo, img_array):
     clases = ['Hershey', 'Princesa', 'Sublime', 'Triángulo']
-    img_procesada = preprocesar_imagen(imagen)
-    predicciones = modelo.predict(img_procesada, verbose=0)[0]
+    predicciones = modelo.predict(img_array, verbose=0)[0]
 
     return {
         'clases': clases,
@@ -395,7 +393,8 @@ def main():
 
                     if modelo is not None:
                         # Realizar predicción
-                        resultados = predecir(modelo, imagen)
+                        img_array = preprocesar_imagen(imagen)  # convierte a tensor listo para el modelo
+                        resultados = predecir(modelo, img_array)
 
                         # Mostrar resultado principal
                         st.markdown(f"""
@@ -479,3 +478,10 @@ def main():
 # ==================== EJECUCIÓN ====================
 if __name__ == "__main__":
     main()
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+from tensorflow.keras.models import load_model
+modelo = load_model('/content/drive/MyDrive/CD2/modelo_chocolates.h5')
+modelo.summary()
